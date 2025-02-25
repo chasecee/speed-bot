@@ -12,8 +12,10 @@ export async function GET() {
   try {
     const sheets = new GoogleSheetsHelper();
     const domains = await sheets.getDomains();
-    // Take first 3-4 domains to ensure we complete within the 60s limit
-    const batchDomains = domains.slice(0, 3);
+
+    // Process all domains in dev, limited batch in production
+    const batchDomains =
+      process.env.NODE_ENV === "development" ? domains : domains.slice(0, 3);
 
     console.log(`📊 Processing ${batchDomains.length} domains...`);
 
