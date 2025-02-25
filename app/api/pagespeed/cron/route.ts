@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { GoogleSheetsHelper } from "@/lib/google-sheets";
 import { runPageSpeedTest } from "@/lib/pagespeed";
 
-// Set longer timeout for cron job
-export const maxDuration = 300; // 5 minutes, max allowed on hobby tier
+// Maximum duration for Hobby tier is 60 seconds
+export const maxDuration = 60;
 
 export async function GET() {
   const startTime = Date.now();
@@ -12,10 +12,12 @@ export async function GET() {
   try {
     const sheets = new GoogleSheetsHelper();
     const domains = await sheets.getDomains();
-    console.log(`📊 Processing ${domains.length} domains...`);
+    // Take first 3-4 domains to ensure we complete within the 60s limit
+    const batchDomains = domains.slice(0, 3);
 
-    // Process domains sequentially to avoid rate limits
-    for (const domain of domains) {
+    console.log(`📊 Processing ${batchDomains.length} domains...`);
+
+    for (const domain of batchDomains) {
       try {
         console.log(`Testing ${domain}...`);
         const [mobileResults, desktopResults] = await Promise.all([
@@ -23,7 +25,6 @@ export async function GET() {
           runPageSpeedTest(domain, "desktop"),
         ]);
 
-        // Write results immediately after each test
         await sheets.writeResults(
           domain,
           {
@@ -54,7 +55,7 @@ export async function GET() {
 
     return NextResponse.json({
       success: true,
-      domainsProcessed: domains.length,
+      domainsProcessed: batchDomains.length,
       duration: `${duration}s`,
       results,
     });
