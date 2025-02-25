@@ -5,7 +5,7 @@ import RunTestButton from "@/components/RunTestButton";
 import { usePageSpeedTests } from "@/hooks/usePageSpeedTests";
 
 export default function PageSpeedMonitor() {
-  const { status, loading, stage, runTests } = usePageSpeedTests();
+  const { status, loading, stage, domains, runTests } = usePageSpeedTests();
 
   return (
     <main className="p-8 max-w-4xl mx-auto">
@@ -13,7 +13,12 @@ export default function PageSpeedMonitor() {
       <RunTestButton loading={loading} onRun={runTests} />
       {status && (
         <div className="space-y-4">
-          <ProgressBar status={status} loading={loading} stage={stage} />
+          <ProgressBar
+            status={status}
+            loading={loading}
+            stage={stage}
+            domains={domains}
+          />
           <TestResults results={status.results} />
         </div>
       )}

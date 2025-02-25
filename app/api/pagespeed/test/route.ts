@@ -14,39 +14,41 @@ export async function GET() {
 
     console.log(`🧪 Testing with domains: ${testDomains.join(", ")}`);
 
-    const results = [];
-    for (const domain of testDomains) {
-      try {
-        const [mobileResults, desktopResults] = await Promise.all([
-          runPageSpeedTest(domain, "mobile"),
-          runPageSpeedTest(domain, "desktop"),
-        ]);
+    // Process all domains in parallel
+    const results = await Promise.all(
+      testDomains.map(async (domain) => {
+        try {
+          const [mobileResults, desktopResults] = await Promise.all([
+            runPageSpeedTest(domain, "mobile"),
+            runPageSpeedTest(domain, "desktop"),
+          ]);
 
-        // Write results to sheet
-        await sheets.writeResults(
-          domain,
-          {
+          // Write results to sheet
+          await sheets.writeResults(
+            domain,
+            {
+              mobile: mobileResults,
+              desktop: desktopResults,
+            },
+            new Date().toISOString().split("T")[0]
+          );
+
+          return {
+            domain,
+            status: "success",
             mobile: mobileResults,
             desktop: desktopResults,
-          },
-          new Date().toISOString().split("T")[0]
-        );
-
-        results.push({
-          domain,
-          status: "success",
-          mobile: mobileResults,
-          desktop: desktopResults,
-        });
-      } catch (error) {
-        console.error(`Error processing ${domain}:`, error);
-        results.push({
-          domain,
-          status: "error",
-          error: String(error),
-        });
-      }
-    }
+          };
+        } catch (error) {
+          console.error(`Error processing ${domain}:`, error);
+          return {
+            domain,
+            status: "error",
+            error: String(error),
+          };
+        }
+      })
+    );
 
     const duration = ((Date.now() - startTime) / 1000).toFixed(1);
     console.log(`✅ Test completed in ${duration}s`);

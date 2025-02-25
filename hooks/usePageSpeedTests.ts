@@ -8,21 +8,12 @@ interface PageSpeedStatus {
   results: Array<{
     domain: string;
     status: string;
+    mobile?: any;
+    desktop?: any;
     error?: string;
-    mobile?: {
-      performance: number;
-      firstContentfulPaint: number;
-      speedIndex: number;
-    };
-    desktop?: {
-      performance: number;
-      firstContentfulPaint: number;
-      speedIndex: number;
-    };
   }>;
 }
 
-// Make sure to export as a named export
 export const usePageSpeedTests = () => {
   const [status, setStatus] = useState<PageSpeedStatus>({
     success: false,
@@ -32,34 +23,73 @@ export const usePageSpeedTests = () => {
   const [stage, setStage] = useState<
     "idle" | "reading-sheet" | "running-tests"
   >("idle");
+  const [domains, setDomains] = useState<string[]>([]);
 
   const runTests = async () => {
     try {
       setLoading(true);
       setStage("reading-sheet");
+      setStatus({ success: false, results: [] });
+      setDomains([]);
 
-      // Use test endpoint in development
-      const endpoint =
-        process.env.NODE_ENV === "development"
-          ? "/api/pagespeed/test"
-          : "/api/pagespeed/cron";
+      const eventSource = new EventSource("/api/pagespeed/stream");
 
-      const response = await fetch(endpoint);
+      eventSource.onmessage = (event) => {
+        const data = JSON.parse(event.data);
 
-      if (response.ok) {
-        setStage("running-tests");
-      }
+        switch (data.type) {
+          case "domains":
+            setDomains(data.domains);
+            setStage("running-tests");
+            break;
 
-      const data = await response.json();
-      setStatus(data);
-      setStage("idle");
-      setLoading(false);
+          case "result":
+            setStatus((prev) => ({
+              ...prev,
+              success: true,
+              duration: data.duration,
+              results: [...prev.results, data.result],
+            }));
+            break;
+
+          case "complete":
+            eventSource.close();
+            setLoading(false);
+            setStage("idle");
+            setStatus((prev) => ({
+              ...prev,
+              success: true,
+              duration: data.duration,
+              domainsProcessed: data.domainsProcessed,
+            }));
+            break;
+
+          case "error":
+            console.error("Error:", data.error);
+            setStatus((prev) => ({
+              ...prev,
+              success: false,
+              duration: data.duration,
+            }));
+            eventSource.close();
+            setLoading(false);
+            setStage("idle");
+            break;
+        }
+      };
+
+      eventSource.onerror = () => {
+        console.error("SSE error");
+        eventSource.close();
+        setLoading(false);
+        setStage("idle");
+      };
     } catch (error) {
       console.error("Error:", error);
-      setStage("idle");
       setLoading(false);
+      setStage("idle");
     }
   };
 
-  return { status, loading, stage, runTests };
+  return { status, loading, stage, domains, runTests };
 };

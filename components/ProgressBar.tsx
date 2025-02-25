@@ -11,12 +11,14 @@ interface ProgressBarProps {
   };
   loading: boolean;
   stage: "idle" | "reading-sheet" | "running-tests";
+  domains: string[];
 }
 
 export default function ProgressBar({
   status,
   loading,
   stage,
+  domains,
 }: ProgressBarProps) {
   const hasResults = status.results.length > 0;
 
@@ -31,16 +33,33 @@ export default function ProgressBar({
           {stage === "reading-sheet"
             ? "Reading Google Sheet..."
             : stage === "running-tests"
-            ? "Running PageSpeed tests..."
+            ? `Running PageSpeed tests (${status.results.length}/${domains.length})`
             : hasResults
-            ? `Loaded ${status.results.length} domains`
+            ? `Completed ${status.results.length} domains`
             : "Ready to run tests"}
         </p>
-        {hasResults && (
+        {domains.length > 0 && stage === "running-tests" && (
           <ul className="mt-1 text-sm text-gray-500 font-mono">
-            {status.results.map((result) => (
-              <li key={result.domain}>• {result.domain}</li>
-            ))}
+            {domains.map((domain) => {
+              const result = status.results.find((r) => r.domain === domain);
+              return (
+                <li key={domain} className="flex items-center gap-2">
+                  <span>•</span>
+                  {domain}
+                  {result && (
+                    <span
+                      className={
+                        result.status === "success"
+                          ? "text-green-500"
+                          : "text-red-500"
+                      }
+                    >
+                      {result.status === "success" ? "✓" : "✗"}
+                    </span>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         )}
         {status.duration && (

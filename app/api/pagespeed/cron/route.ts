@@ -7,50 +7,48 @@ export const maxDuration = 60;
 
 export async function GET() {
   const startTime = Date.now();
-  const results = [];
 
   try {
     const sheets = new GoogleSheetsHelper();
     const domains = await sheets.getDomains();
-
-    // Process all domains in dev, limited batch in production
     const batchDomains =
       process.env.NODE_ENV === "development" ? domains : domains.slice(0, 3);
 
     console.log(`📊 Processing ${batchDomains.length} domains...`);
 
-    for (const domain of batchDomains) {
-      try {
-        console.log(`Testing ${domain}...`);
-        const [mobileResults, desktopResults] = await Promise.all([
-          runPageSpeedTest(domain, "mobile"),
-          runPageSpeedTest(domain, "desktop"),
-        ]);
+    const results = await Promise.all(
+      batchDomains.map(async (domain) => {
+        try {
+          const [mobileResults, desktopResults] = await Promise.all([
+            runPageSpeedTest(domain, "mobile"),
+            runPageSpeedTest(domain, "desktop"),
+          ]);
 
-        await sheets.writeResults(
-          domain,
-          {
+          await sheets.writeResults(
+            domain,
+            {
+              mobile: mobileResults,
+              desktop: desktopResults,
+            },
+            new Date().toISOString().split("T")[0]
+          );
+
+          return {
+            domain,
+            status: "success",
             mobile: mobileResults,
             desktop: desktopResults,
-          },
-          new Date().toISOString().split("T")[0]
-        );
-
-        results.push({
-          domain,
-          status: "success",
-          mobile: mobileResults,
-          desktop: desktopResults,
-        });
-      } catch (error) {
-        console.error(`Error processing ${domain}:`, error);
-        results.push({
-          domain,
-          status: "error",
-          error: String(error),
-        });
-      }
-    }
+          };
+        } catch (error) {
+          console.error(`Error processing ${domain}:`, error);
+          return {
+            domain,
+            status: "error",
+            error: String(error),
+          };
+        }
+      })
+    );
 
     const duration = ((Date.now() - startTime) / 1000).toFixed(1);
     console.log(`✅ Completed in ${duration}s`);
