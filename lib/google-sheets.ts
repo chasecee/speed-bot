@@ -1,18 +1,19 @@
 import { google } from "googleapis";
 import { JWT } from "google-auth-library";
+import { PageSpeedResult } from "@/types";
 
-interface MetricResult {
-  mobile: {
-    performance: number;
-    firstContentfulPaint: number;
-    speedIndex: number;
-  };
-  desktop: {
-    performance: number;
-    firstContentfulPaint: number;
-    speedIndex: number;
-  };
-}
+// interface MetricResult {
+//   mobile: {
+//     performance: number;
+//     firstContentfulPaint: number;
+//     speedIndex: number;
+//   };
+//   desktop: {
+//     performance: number;
+//     firstContentfulPaint: number;
+//     speedIndex: number;
+//   };
+// }
 
 // Define color thresholds for metrics
 const thresholds = {
@@ -46,9 +47,49 @@ function getColorForMetric(
   }
 }
 
+interface SheetProperties {
+  properties: {
+    title: string;
+    sheetId: number;
+  };
+}
+
+// Define a type for the Google Sheets API
+interface GoogleSheetsAPI {
+  spreadsheets: {
+    get: (params: { spreadsheetId: string }) => Promise<{
+      data: {
+        sheets: Array<{
+          properties: {
+            title: string;
+            sheetId: number;
+          };
+        }>;
+      };
+    }>;
+    values: {
+      get: (params: { spreadsheetId: string; range: string }) => Promise<{
+        data: {
+          values?: string[][];
+        };
+      }>;
+      update: (params: {
+        spreadsheetId: string;
+        range: string;
+        valueInputOption: string;
+        resource: { values: unknown[][] };
+      }) => Promise<unknown>;
+    };
+    batchUpdate: (params: {
+      spreadsheetId: string;
+      resource: { requests: unknown[] };
+    }) => Promise<unknown>;
+  };
+}
+
 export class GoogleSheetsHelper {
   private client: JWT;
-  private sheets: any;
+  private sheets: GoogleSheetsAPI;
   private spreadsheetId: string;
 
   constructor() {
@@ -63,8 +104,11 @@ export class GoogleSheetsHelper {
       scopes: ["https://www.googleapis.com/auth/spreadsheets"],
     });
 
-    // Initialize the sheets API
-    this.sheets = google.sheets({ version: "v4", auth: this.client });
+    // Use type assertion here
+    this.sheets = google.sheets({
+      version: "v4",
+      auth: this.client,
+    }) as GoogleSheetsAPI;
     this.spreadsheetId = process.env.GOOGLE_SHEETS_SHEET_ID || "";
   }
 
@@ -75,9 +119,9 @@ export class GoogleSheetsHelper {
         spreadsheetId: this.spreadsheetId,
       });
 
-      // Extract sheet names (excluding any system sheets)
+      // Extract sheet names (excluding the first sheet which appears to be a metrics sheet)
       const domains = sheetsResponse.data.sheets
-        .map((sheet: any) => sheet.properties.title)
+        .map((sheet: SheetProperties) => sheet.properties.title)
         .filter(
           (title: string) => !title.includes("Sheet") && title !== "Metrics"
         );
@@ -93,8 +137,8 @@ export class GoogleSheetsHelper {
   async writeResults(
     domain: string,
     results: {
-      mobile: any;
-      desktop: any;
+      mobile: PageSpeedResult;
+      desktop: PageSpeedResult;
     },
     date: string
   ) {
@@ -107,7 +151,7 @@ export class GoogleSheetsHelper {
 
       // Find the next empty column or create a new one
       const headerRow = response.data.values?.[0] || [];
-      let columnIndex = headerRow.length + 1; // Next empty column (A=1, B=2, etc.)
+      const columnIndex = headerRow.length + 1; // Next empty column (A=1, B=2, etc.)
       const columnLetter = String.fromCharCode(64 + columnIndex); // Convert to letter (A, B, C...)
 
       // Write the date in the header
@@ -121,21 +165,24 @@ export class GoogleSheetsHelper {
       });
 
       // Write the results in the column
-      const values = [
-        [results.mobile.performance],
-        [results.mobile.firstContentfulPaint],
-        [results.mobile.speedIndex],
-        [results.desktop.performance],
-        [results.desktop.firstContentfulPaint],
-        [results.desktop.speedIndex],
-      ];
-
       await this.sheets.spreadsheets.values.update({
         spreadsheetId: this.spreadsheetId,
         range: `${domain}!${columnLetter}2:${columnLetter}7`,
         valueInputOption: "RAW",
-        resource: { values },
+        resource: {
+          values: [
+            [results.mobile.performance],
+            [results.mobile.firstContentfulPaint],
+            [results.mobile.speedIndex],
+            [results.desktop.performance],
+            [results.desktop.firstContentfulPaint],
+            [results.desktop.speedIndex],
+          ],
+        },
       });
+
+      // Get the sheet ID for formatting
+      const sheetId = await this.getSheetIdByName(domain);
 
       // Apply color formatting based on metric values
       const requests = [
@@ -143,7 +190,7 @@ export class GoogleSheetsHelper {
         {
           updateCells: {
             range: {
-              sheetId: this.getSheetIdByName(domain),
+              sheetId: sheetId,
               startRowIndex: 1,
               endRowIndex: 2,
               startColumnIndex: columnIndex - 1,
@@ -170,7 +217,7 @@ export class GoogleSheetsHelper {
         {
           updateCells: {
             range: {
-              sheetId: this.getSheetIdByName(domain),
+              sheetId: sheetId,
               startRowIndex: 2,
               endRowIndex: 3,
               startColumnIndex: columnIndex - 1,
@@ -197,7 +244,7 @@ export class GoogleSheetsHelper {
         {
           updateCells: {
             range: {
-              sheetId: this.getSheetIdByName(domain),
+              sheetId: sheetId,
               startRowIndex: 3,
               endRowIndex: 4,
               startColumnIndex: columnIndex - 1,
@@ -224,7 +271,7 @@ export class GoogleSheetsHelper {
         {
           updateCells: {
             range: {
-              sheetId: this.getSheetIdByName(domain),
+              sheetId: sheetId,
               startRowIndex: 4,
               endRowIndex: 5,
               startColumnIndex: columnIndex - 1,
@@ -251,7 +298,7 @@ export class GoogleSheetsHelper {
         {
           updateCells: {
             range: {
-              sheetId: this.getSheetIdByName(domain),
+              sheetId: sheetId,
               startRowIndex: 5,
               endRowIndex: 6,
               startColumnIndex: columnIndex - 1,
@@ -278,7 +325,7 @@ export class GoogleSheetsHelper {
         {
           updateCells: {
             range: {
-              sheetId: this.getSheetIdByName(domain),
+              sheetId: sheetId,
               startRowIndex: 6,
               endRowIndex: 7,
               startColumnIndex: columnIndex - 1,
@@ -317,14 +364,14 @@ export class GoogleSheetsHelper {
   }
 
   // Helper method to get sheet ID by name
-  private getSheetIdByName(sheetName: string): number {
+  private async getSheetIdByName(sheetName: string): Promise<number> {
     try {
-      const sheetsResponse = this.sheets.spreadsheets.get({
+      const sheetsResponse = await this.sheets.spreadsheets.get({
         spreadsheetId: this.spreadsheetId,
       });
 
       const sheet = sheetsResponse.data.sheets.find(
-        (s: any) => s.properties.title === sheetName
+        (s: SheetProperties) => s.properties.title === sheetName
       );
 
       return sheet?.properties.sheetId || 0;

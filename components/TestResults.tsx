@@ -1,19 +1,13 @@
 "use client";
 
+import { PageSpeedResult } from "@/types";
+
 interface TestResult {
   domain: string;
   status: string;
   error?: string;
-  mobile?: {
-    performance: number;
-    firstContentfulPaint: number;
-    speedIndex: number;
-  };
-  desktop?: {
-    performance: number;
-    firstContentfulPaint: number;
-    speedIndex: number;
-  };
+  mobile?: PageSpeedResult;
+  desktop?: PageSpeedResult;
 }
 
 interface TestResultsProps {

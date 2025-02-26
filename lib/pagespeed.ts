@@ -1,7 +1,9 @@
+import { PageSpeedResult } from "@/types";
+
 export async function runPageSpeedTest(
   domain: string,
   strategy: "mobile" | "desktop"
-) {
+): Promise<PageSpeedResult> {
   const url = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=https://${domain}&strategy=${strategy}&key=${process.env.PAGESPEED_API_KEY}`;
 
   const response = await fetch(url);

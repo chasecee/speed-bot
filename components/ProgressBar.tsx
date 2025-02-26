@@ -1,14 +1,9 @@
 "use client";
 
+import { PageSpeedStatus } from "@/types";
+
 interface ProgressBarProps {
-  status: {
-    domainsProcessed?: number;
-    duration?: string;
-    results: Array<{
-      domain: string;
-      status: string;
-    }>;
-  };
+  status: PageSpeedStatus;
   loading: boolean;
   stage: "idle" | "reading-sheet" | "running-tests";
   domains: string[];
