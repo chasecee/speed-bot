@@ -1,4 +1,4 @@
-const chromeLauncher = require("chrome-launcher");
+import * as chromeLauncher from "chrome-launcher";
 const fs = require("fs");
 const { writeFileSync } = fs;
 const fsPromises = require("fs/promises");
