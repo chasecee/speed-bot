@@ -105,39 +105,73 @@ export class GoogleSheetsHelper {
 
   constructor() {
     console.log("Email:", process.env.GOOGLE_SHEETS_CLIENT_EMAIL);
-    console.log("Key exists:", !!process.env.GOOGLE_SHEETS_PRIVATE_KEY);
     console.log("Sheet ID:", process.env.GOOGLE_SHEETS_SHEET_ID);
 
-    // Decode the base64-encoded private key if it exists
-    let privateKey = process.env.GOOGLE_SHEETS_PRIVATE_KEY || "";
-    if (privateKey.startsWith("base64:")) {
-      try {
-        privateKey = Buffer.from(
-          privateKey.replace("base64:", ""),
-          "base64"
-        ).toString();
-        console.log("Decoded base64 key");
-      } catch (error) {
-        console.error("Error decoding base64 key:", error);
+    try {
+      let credentials;
+
+      // Try to use the full service account JSON if available
+      if (process.env.GOOGLE_SERVICE_ACCOUNT) {
+        try {
+          credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
+          console.log("Using full service account credentials");
+        } catch (error) {
+          console.error("Error parsing service account JSON:", error);
+        }
       }
-    } else {
-      // Handle regular key with newlines
-      privateKey = privateKey.replace(/\\n/g, "\n");
+
+      // Fall back to individual credentials if needed
+      if (
+        !credentials &&
+        process.env.GOOGLE_SHEETS_CLIENT_EMAIL &&
+        process.env.GOOGLE_SHEETS_PRIVATE_KEY
+      ) {
+        // Decode the base64-encoded private key if it exists
+        let privateKey = process.env.GOOGLE_SHEETS_PRIVATE_KEY || "";
+        if (privateKey.startsWith("base64:")) {
+          try {
+            privateKey = Buffer.from(
+              privateKey.replace("base64:", ""),
+              "base64"
+            ).toString();
+            console.log("Decoded base64 key");
+          } catch (error) {
+            console.error("Error decoding base64 key:", error);
+          }
+        } else {
+          // Handle regular key with newlines
+          privateKey = privateKey.replace(/\\n/g, "\n");
+        }
+
+        credentials = {
+          client_email: process.env.GOOGLE_SHEETS_CLIENT_EMAIL,
+          private_key: privateKey,
+        };
+        console.log("Using individual credentials");
+      }
+
+      if (!credentials) {
+        throw new Error("No valid credentials found");
+      }
+
+      // Create a JWT client using the service account credentials
+      this.client = new JWT({
+        email: credentials.client_email,
+        key: credentials.private_key,
+        scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+      });
+
+      // Use type assertion here
+      this.sheets = google.sheets({
+        version: "v4",
+        auth: this.client,
+      }) as GoogleSheetsAPI;
+
+      this.spreadsheetId = process.env.GOOGLE_SHEETS_SHEET_ID || "";
+    } catch (error) {
+      console.error("Error initializing GoogleSheetsHelper:", error);
+      throw error;
     }
-
-    // Create a JWT client using the service account credentials
-    this.client = new JWT({
-      email: process.env.GOOGLE_SHEETS_CLIENT_EMAIL,
-      key: privateKey,
-      scopes: ["https://www.googleapis.com/auth/spreadsheets"],
-    });
-
-    // Use type assertion here
-    this.sheets = google.sheets({
-      version: "v4",
-      auth: this.client,
-    }) as GoogleSheetsAPI;
-    this.spreadsheetId = process.env.GOOGLE_SHEETS_SHEET_ID || "";
   }
 
   async getDomains(): Promise<string[]> {

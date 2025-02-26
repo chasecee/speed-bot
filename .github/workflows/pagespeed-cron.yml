@@ -27,7 +27,6 @@ jobs:
       - name: Run PageSpeed tests
         run: npx ts-node -P tsconfig.scripts.json scripts/run-pagespeed-tests.ts
         env:
-          GOOGLE_SHEETS_CLIENT_EMAIL: ${{ secrets.GOOGLE_SHEETS_CLIENT_EMAIL }}
-          GOOGLE_SHEETS_PRIVATE_KEY: ${{ secrets.GOOGLE_SHEETS_PRIVATE_KEY }}
+          GOOGLE_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
           GOOGLE_SHEETS_SHEET_ID: ${{ secrets.GOOGLE_SHEETS_SHEET_ID }}
           PAGESPEED_API_KEY: ${{ secrets.PAGESPEED_API_KEY }}
