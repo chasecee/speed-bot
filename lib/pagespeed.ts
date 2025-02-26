@@ -9,6 +9,15 @@ export async function runPageSpeedTest(
   const response = await fetch(url);
   const data = await response.json();
 
+  // Check if the response contains the expected data structure
+  if (
+    !data.lighthouseResult ||
+    !data.lighthouseResult.categories ||
+    !data.lighthouseResult.categories.performance
+  ) {
+    throw new Error(`PageSpeed API returned incomplete data for ${domain}`);
+  }
+
   return {
     performance: Math.round(
       data.lighthouseResult.categories.performance.score * 100

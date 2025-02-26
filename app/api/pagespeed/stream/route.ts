@@ -4,6 +4,12 @@ import { runPageSpeedTest } from "@/lib/pagespeed";
 // Maximum duration for Hobby tier is 60 seconds
 export const maxDuration = 60;
 
+// Add this helper function at the top level
+const timeoutPromise = (ms: number) =>
+  new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error("Request timed out")), ms)
+  );
+
 export async function GET() {
   const encoder = new TextEncoder();
   const stream = new TransformStream();
@@ -24,10 +30,17 @@ export async function GET() {
 
       const promises = testDomains.map(async (domain) => {
         try {
-          const [mobileResults, desktopResults] = await Promise.all([
-            runPageSpeedTest(domain, "mobile"),
-            runPageSpeedTest(domain, "desktop"),
+          // Set a timeout of 30 seconds per domain
+          const results = await Promise.race([
+            Promise.all([
+              runPageSpeedTest(domain, "mobile"),
+              runPageSpeedTest(domain, "desktop"),
+            ]),
+            timeoutPromise(30000), // 30 second timeout per domain
           ]);
+
+          // Destructure the results array
+          const [mobileResults, desktopResults] = results;
 
           await sheets.writeResults(
             domain,
@@ -53,16 +66,26 @@ export async function GET() {
 
           return result;
         } catch (error) {
+          console.error(`Error processing ${domain}:`, error);
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+
           const errorResult = {
             domain,
             status: "error",
-            error: String(error),
+            error: errorMessage,
+            errorDetails:
+              error instanceof Error && error.stack
+                ? error.stack.split("\n").slice(0, 3).join("\n")
+                : undefined,
           };
+
           await write({
             type: "result",
             result: errorResult,
             duration: `${((Date.now() - startTime) / 1000).toFixed(1)}s`,
           });
+
           return errorResult;
         }
       });
