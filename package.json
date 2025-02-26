@@ -31,13 +31,5 @@
     "tslib": "^2.8.1",
     "typescript": "^5"
   },
-  "type": "module",
-  "ts-node": {
-    "esm": true,
-    "experimentalSpecifierResolution": "node",
-    "transpileOnly": true,
-    "moduleTypes": {
-      "scripts/**/*": "esm"
-    }
-  }
+  "type": "module"
 }

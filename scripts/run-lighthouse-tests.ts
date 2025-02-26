@@ -1,8 +1,8 @@
 import * as chromeLauncher from "chrome-launcher";
-const fs = require("fs");
-const { writeFileSync } = fs;
-const fsPromises = require("fs/promises");
-const { GoogleSheetsHelper } = require("../lib/google-sheets");
+import fs from "fs";
+import { writeFileSync } from "fs";
+import fsPromises from "fs/promises";
+import { GoogleSheetsHelper } from "../lib/google-sheets.js";
 
 // Wrap in async IIFE
 (async () => {
@@ -27,6 +27,7 @@ const { GoogleSheetsHelper } = require("../lib/google-sheets");
         "--disable-software-rasterizer",
         "--disable-extensions",
       ],
+      chromePath: process.env.CHROME_PATH,
     });
 
     const options = {

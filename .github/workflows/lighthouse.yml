@@ -2,20 +2,30 @@ name: Lighthouse CI
 on:
   push:
     branches: [main] # Adjust based on your branch structure
+  schedule:
+    - cron: "0 12 * * *" # Run daily at noon UTC
   workflow_dispatch: # Allow manual triggering
 
 jobs:
   lighthouse:
     runs-on: ubuntu-latest
+    environment: Production
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
-      - name: Audit URLs using Lighthouse
-        uses: treosh/lighthouse-ci-action@v12
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          urls: |
-            https://chasecee.com/
-            https://www.striderintel.com/about
-            https://inmoment.com/blog
-          uploadArtifacts: true
-          temporaryPublicStorage: true
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run Lighthouse tests
+        run: npx ts-node -P tsconfig.scripts.json scripts/run-lighthouse-tests.ts
+        env:
+          GOOGLE_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
+          GOOGLE_SHEETS_SHEET_ID: ${{ secrets.GOOGLE_SHEETS_SHEET_ID }}
+          CHROME_PATH: /usr/bin/chromium-browser
