@@ -24,7 +24,8 @@ jobs:
         run: npm install
 
       - name: Run Lighthouse tests
-        run: npx ts-node -P tsconfig.scripts.json scripts/run-lighthouse-tests.ts
+        run: |
+          NODE_OPTIONS="--loader ts-node/esm" node scripts/run-lighthouse-tests.ts
         env:
           GOOGLE_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
           GOOGLE_SHEETS_SHEET_ID: ${{ secrets.GOOGLE_SHEETS_SHEET_ID }}
