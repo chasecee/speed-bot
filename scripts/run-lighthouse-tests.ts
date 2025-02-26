@@ -1,5 +1,6 @@
-import * as chromeLauncher from "chrome-launcher";
-import { writeFileSync } from "fs";
+const chromeLauncher = require("chrome-launcher");
+const fs = require("fs");
+const { writeFileSync } = fs;
 import { GoogleSheetsHelper } from "../lib/google-sheets";
 
 // Wrap in async IIFE
@@ -46,8 +47,8 @@ import { GoogleSheetsHelper } from "../lib/google-sheets";
       const lhr = runnerResult.lhr;
 
       // Create directory if it doesn't exist
-      const fs = await import("fs/promises");
-      await fs.mkdir("lighthouse-results", { recursive: true });
+      const fsPromises = require("fs/promises");
+      await fsPromises.mkdir("lighthouse-results", { recursive: true });
 
       // Save the report
       const reportPath = `lighthouse-results/${url}-${strategy}.json`;
