@@ -9,8 +9,7 @@ export async function GET() {
   try {
     const sheets = new GoogleSheetsHelper();
     const domains = await sheets.getDomains();
-    // Take first two domains for testing
-    const testDomains = domains.slice(0, 2);
+    const testDomains = domains; // No slice, use all domains
 
     console.log(`🧪 Testing with domains: ${testDomains.join(", ")}`);
 
