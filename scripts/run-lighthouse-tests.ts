@@ -1,7 +1,9 @@
-import lighthouse from "lighthouse";
 import * as chromeLauncher from "chrome-launcher";
 import { writeFileSync } from "fs";
 import { GoogleSheetsHelper } from "../lib/google-sheets";
+
+// Remove the lighthouse import and add it dynamically
+const lighthouse = (await import("lighthouse")).default;
 
 interface LighthouseResult {
   performance: number;
