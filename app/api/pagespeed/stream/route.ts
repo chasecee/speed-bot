@@ -18,7 +18,7 @@ export async function GET() {
     try {
       const sheets = new GoogleSheetsHelper();
       const domains = await sheets.getDomains();
-      const testDomains = domains.slice(0, 2);
+      const testDomains = domains;
 
       await write({ type: "domains", domains: testDomains });
 
@@ -74,18 +74,15 @@ export async function GET() {
         type: "complete",
         results,
         duration,
-        success: true,
-        domainsProcessed: testDomains.length,
       });
-
-      await writer.close();
     } catch (error) {
+      console.error("Error processing tests:", error);
       await write({
         type: "error",
         error: String(error),
-        duration: `${((Date.now() - startTime) / 1000).toFixed(1)}s`,
       });
-      await writer.close();
+    } finally {
+      writer.close();
     }
   };
 
