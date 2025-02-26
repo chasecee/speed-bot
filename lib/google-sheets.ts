@@ -108,10 +108,27 @@ export class GoogleSheetsHelper {
     console.log("Key exists:", !!process.env.GOOGLE_SHEETS_PRIVATE_KEY);
     console.log("Sheet ID:", process.env.GOOGLE_SHEETS_SHEET_ID);
 
+    // Decode the base64-encoded private key if it exists
+    let privateKey = process.env.GOOGLE_SHEETS_PRIVATE_KEY || "";
+    if (privateKey.startsWith("base64:")) {
+      try {
+        privateKey = Buffer.from(
+          privateKey.replace("base64:", ""),
+          "base64"
+        ).toString();
+        console.log("Decoded base64 key");
+      } catch (error) {
+        console.error("Error decoding base64 key:", error);
+      }
+    } else {
+      // Handle regular key with newlines
+      privateKey = privateKey.replace(/\\n/g, "\n");
+    }
+
     // Create a JWT client using the service account credentials
     this.client = new JWT({
       email: process.env.GOOGLE_SHEETS_CLIENT_EMAIL,
-      key: process.env.GOOGLE_SHEETS_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+      key: privateKey,
       scopes: ["https://www.googleapis.com/auth/spreadsheets"],
     });
 
