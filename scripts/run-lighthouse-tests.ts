@@ -1,5 +1,7 @@
-import * as chromeLauncher from "chrome-launcher";
-import { writeFileSync } from "fs";
+const chromeLauncher = require("chrome-launcher");
+const fs = require("fs");
+const { writeFileSync } = fs;
+const fsPromises = require("fs/promises");
 const { GoogleSheetsHelper } = require("../lib/google-sheets");
 
 // Wrap in async IIFE
@@ -20,8 +22,8 @@ const { GoogleSheetsHelper } = require("../lib/google-sheets");
       chromeFlags: [
         "--headless",
         "--disable-gpu",
-        "--no-sandbox", // Required for running in Docker/CI
-        "--disable-dev-shm-usage", // Prevent memory issues in CI
+        "--no-sandbox",
+        "--disable-dev-shm-usage",
         "--disable-software-rasterizer",
         "--disable-extensions",
       ],
@@ -36,8 +38,8 @@ const { GoogleSheetsHelper } = require("../lib/google-sheets");
         strategy === "mobile"
           ? { mobile: true, width: 375, height: 667, deviceScaleFactor: 2 }
           : { mobile: false, width: 1350, height: 940, deviceScaleFactor: 1 },
-      maxWaitForFcp: 30000, // 30 seconds timeout for First Contentful Paint
-      maxWaitForLoad: 45000, // 45 seconds timeout for full page load
+      maxWaitForFcp: 30000,
+      maxWaitForLoad: 45000,
     };
 
     try {
@@ -46,8 +48,7 @@ const { GoogleSheetsHelper } = require("../lib/google-sheets");
       const lhr = runnerResult.lhr;
 
       // Create directory if it doesn't exist
-      const fs = await import("fs/promises");
-      await fs.mkdir("lighthouse-results", { recursive: true });
+      await fsPromises.mkdir("lighthouse-results", { recursive: true });
 
       // Save the report
       const reportPath = `lighthouse-results/${url}-${strategy}.json`;
@@ -74,11 +75,10 @@ const { GoogleSheetsHelper } = require("../lib/google-sheets");
       return {
         performance: Math.round((lhr.categories.performance?.score ?? 0) * 100),
         firstContentfulPaint:
-          Math.round(
-            lhr.audits["first-contentful-paint"]?.numericValue ?? 0 / 10
-          ) / 100,
+          Math.round(lhr.audits["first-contentful-paint"]?.numericValue ?? 0) /
+          1000,
         speedIndex:
-          Math.round((lhr.audits["speed-index"]?.numericValue ?? 0) / 10) / 100,
+          Math.round(lhr.audits["speed-index"]?.numericValue ?? 0) / 1000,
       };
     } catch (error) {
       console.error(`Failed to test ${url} (${strategy}):`, error);
