@@ -24,9 +24,12 @@ jobs:
         run: npm install
 
       - name: Run PageSpeed tests
-        run: npx ts-node -P tsconfig.scripts.json scripts/run-pagespeed-tests.ts
+        run: |
+          # Replace newlines in the private key
+          echo "${{ secrets.GOOGLE_SHEETS_PRIVATE_KEY }}" > private_key.txt
+          export GOOGLE_SHEETS_PRIVATE_KEY=$(cat private_key.txt)
+          npx ts-node -P tsconfig.scripts.json scripts/run-pagespeed-tests.ts
         env:
           GOOGLE_SHEETS_CLIENT_EMAIL: ${{ secrets.GOOGLE_SHEETS_CLIENT_EMAIL }}
-          GOOGLE_SHEETS_PRIVATE_KEY: ${{ secrets.GOOGLE_SHEETS_PRIVATE_KEY }}
           GOOGLE_SHEETS_SHEET_ID: ${{ secrets.GOOGLE_SHEETS_SHEET_ID }}
           PAGESPEED_API_KEY: ${{ secrets.PAGESPEED_API_KEY }}
