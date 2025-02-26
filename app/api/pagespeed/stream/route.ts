@@ -1,5 +1,6 @@
 import { GoogleSheetsHelper } from "@/lib/google-sheets";
 import { runPageSpeedTest } from "@/lib/pagespeed";
+import { PageSpeedResult } from "@/types";
 
 // Maximum duration for Hobby tier is 60 seconds
 export const maxDuration = 60;
@@ -28,30 +29,28 @@ export async function GET() {
 
       await write({ type: "domains", domains: testDomains });
 
-      const promises = testDomains.map(async (domain) => {
+      // Process domains sequentially instead of all at once
+      for (const domain of testDomains) {
         try {
-          // Set a timeout of 30 seconds per domain
-          const results = await Promise.race([
+          // Set a timeout of 30 seconds per domain test
+          const result = (await Promise.race([
             Promise.all([
               runPageSpeedTest(domain, "mobile"),
               runPageSpeedTest(domain, "desktop"),
             ]),
             timeoutPromise(30000), // 30 second timeout per domain
-          ]);
+          ])) as [PageSpeedResult, PageSpeedResult];
 
-          // Destructure the results array
-          const [mobileResults, desktopResults] = results;
+          const [mobileResults, desktopResults] = result;
 
+          // Write results to sheet if needed
           await sheets.writeResults(
             domain,
-            {
-              mobile: mobileResults,
-              desktop: desktopResults,
-            },
+            { mobile: mobileResults, desktop: desktopResults },
             new Date().toISOString().split("T")[0]
           );
 
-          const result = {
+          const resultObj = {
             domain,
             status: "success",
             mobile: mobileResults,
@@ -60,11 +59,9 @@ export async function GET() {
 
           await write({
             type: "result",
-            result,
+            result: resultObj,
             duration: `${((Date.now() - startTime) / 1000).toFixed(1)}s`,
           });
-
-          return result;
         } catch (error) {
           console.error(`Error processing ${domain}:`, error);
           const errorMessage =
@@ -74,10 +71,6 @@ export async function GET() {
             domain,
             status: "error",
             error: errorMessage,
-            errorDetails:
-              error instanceof Error && error.stack
-                ? error.stack.split("\n").slice(0, 3).join("\n")
-                : undefined,
           };
 
           await write({
@@ -85,18 +78,15 @@ export async function GET() {
             result: errorResult,
             duration: `${((Date.now() - startTime) / 1000).toFixed(1)}s`,
           });
-
-          return errorResult;
         }
-      });
+      }
 
-      const results = await Promise.all(promises);
+      // Complete the stream
       const duration = `${((Date.now() - startTime) / 1000).toFixed(1)}s`;
-
       await write({
         type: "complete",
-        results,
         duration,
+        domainsProcessed: testDomains.length,
       });
     } catch (error) {
       console.error("Error processing tests:", error);
