@@ -216,13 +216,20 @@ export class GoogleSheetsHelper {
       const columnIndex = headerRow.length + 1; // Next empty column (A=1, B=2, etc.)
       const columnLetter = String.fromCharCode(64 + columnIndex); // Convert to letter (A, B, C...)
 
-      // Write the date in the header
+      // Format date and time in compact format
+      const now = new Date();
+      const formattedDateTime = `${date} ${now
+        .getHours()
+        .toString()
+        .padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
+
+      // Write the date and time in the header
       await this.sheets.spreadsheets.values.update({
         spreadsheetId: this.spreadsheetId,
         range: `${domain}!${columnLetter}1`,
         valueInputOption: "RAW",
         resource: {
-          values: [[date]],
+          values: [[formattedDateTime]],
         },
       });
 

@@ -40,13 +40,15 @@ async function main() {
 
             const [mobileResults, desktopResults] = result;
 
+            const now = new Date();
+            const dateStr = now.toISOString().split("T")[0];
             await sheets.writeResults(
               domain,
               {
                 mobile: mobileResults,
                 desktop: desktopResults,
               },
-              new Date().toISOString().split("T")[0]
+              dateStr
             );
 
             return {

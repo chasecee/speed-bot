@@ -3,7 +3,7 @@ on:
   push:
     branches: [main] # Adjust based on your branch structure
   schedule:
-    - cron: "0 12 * * *" # Run daily at noon UTC
+    - cron: "0 17 * * *" # Run at 10:00 AM MST (5:00 PM UTC)
   workflow_dispatch: # Allow manual triggering
 
 jobs:
