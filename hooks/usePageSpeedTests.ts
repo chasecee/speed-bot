@@ -1,6 +1,12 @@
 "use client";
 import { useState } from "react";
 
+interface PageSpeedResult {
+  performance: number;
+  firstContentfulPaint: number;
+  speedIndex: number;
+}
+
 interface PageSpeedStatus {
   success: boolean;
   domainsProcessed?: number;
@@ -8,8 +14,8 @@ interface PageSpeedStatus {
   results: Array<{
     domain: string;
     status: string;
-    mobile?: any;
-    desktop?: any;
+    mobile?: PageSpeedResult;
+    desktop?: PageSpeedResult;
     error?: string;
   }>;
 }

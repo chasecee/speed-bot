@@ -3,16 +3,14 @@ import { runPageSpeedTest } from "@/lib/pagespeed";
 
 // Maximum duration for Hobby tier is 60 seconds
 export const maxDuration = 60;
-// Add runtime configuration for Edge
-export const runtime = "edge";
 
-export async function GET(request: Request) {
+export async function GET() {
   const encoder = new TextEncoder();
   const stream = new TransformStream();
   const writer = stream.writable.getWriter();
   const startTime = Date.now();
 
-  const write = async (data: any) => {
+  const write = async (data: Record<string, unknown>) => {
     await writer.write(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
   };
 
