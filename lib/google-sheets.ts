@@ -17,33 +17,44 @@ import { PageSpeedResult } from "@/types";
 
 // Define color thresholds for metrics
 const thresholds = {
-  performance: { good: 90, medium: 50 },
-  firstContentfulPaint: { good: 1.8, medium: 3.0 }, // seconds
-  speedIndex: { good: 3.4, medium: 5.8 }, // seconds
+  performance: [95, 90, 75, 50, 25], // Higher is better
+  firstContentfulPaint: [1.0, 1.8, 2.5, 3.0, 4.0], // Lower is better
+  speedIndex: [2.0, 3.4, 4.5, 5.8, 7.0], // Lower is better
 };
 
-// Define colors for good, medium, poor
-const colors = {
-  good: { red: 0.7, green: 0.9, blue: 0.7 }, // Light green
-  medium: { red: 1.0, green: 0.9, blue: 0.6 }, // Light yellow
-  poor: { red: 1.0, green: 0.7, blue: 0.7 }, // Light red
-};
+// Define colors for gradient (from best to worst)
+const colorGradient = [
+  { red: 0.5, green: 0.9, blue: 0.5 }, // Bright green
+  { red: 0.7, green: 0.9, blue: 0.7 }, // Light green
+  { red: 0.9, green: 0.9, blue: 0.5 }, // Light yellow
+  { red: 1.0, green: 0.8, blue: 0.6 }, // Light orange
+  { red: 1.0, green: 0.7, blue: 0.7 }, // Light red
+  { red: 1.0, green: 0.5, blue: 0.5 }, // Bright red
+];
 
 function getColorForMetric(
   value: number,
   metricType: "performance" | "firstContentfulPaint" | "speedIndex"
 ): { red: number; green: number; blue: number } {
-  const threshold = thresholds[metricType];
+  const thresholdValues = thresholds[metricType];
 
+  // For performance, higher is better
   if (metricType === "performance") {
-    if (value >= threshold.good) return colors.good;
-    if (value >= threshold.medium) return colors.medium;
-    return colors.poor;
-  } else {
-    // For timing metrics, lower is better
-    if (value <= threshold.good) return colors.good;
-    if (value <= threshold.medium) return colors.medium;
-    return colors.poor;
+    if (value >= thresholdValues[0]) return colorGradient[0]; // Best
+    if (value >= thresholdValues[1]) return colorGradient[1];
+    if (value >= thresholdValues[2]) return colorGradient[2];
+    if (value >= thresholdValues[3]) return colorGradient[3];
+    if (value >= thresholdValues[4]) return colorGradient[4];
+    return colorGradient[5]; // Worst
+  }
+  // For timing metrics, lower is better
+  else {
+    if (value <= thresholdValues[0]) return colorGradient[0]; // Best
+    if (value <= thresholdValues[1]) return colorGradient[1];
+    if (value <= thresholdValues[2]) return colorGradient[2];
+    if (value <= thresholdValues[3]) return colorGradient[3];
+    if (value <= thresholdValues[4]) return colorGradient[4];
+    return colorGradient[5]; // Worst
   }
 }
 
