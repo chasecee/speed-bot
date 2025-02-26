@@ -12,7 +12,7 @@ export async function GET() {
     const sheets = new GoogleSheetsHelper();
     const domains = await sheets.getDomains();
     const batchDomains =
-      process.env.NODE_ENV === "development" ? domains : domains.slice(0, 3);
+      process.env.NODE_ENV === "development" ? domains : domains.slice(0, 10);
 
     console.log(`📊 Processing ${batchDomains.length} domains...`);
 
