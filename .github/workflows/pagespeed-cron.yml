@@ -24,7 +24,7 @@ jobs:
         run: npm install
 
       - name: Run PageSpeed tests
-        run: npx ts-node scripts/run-pagespeed-tests.ts
+        run: npx ts-node --esm scripts/run-pagespeed-tests.ts
         env:
           GOOGLE_SHEETS_CLIENT_EMAIL: ${{ secrets.GOOGLE_SHEETS_CLIENT_EMAIL }}
           GOOGLE_SHEETS_PRIVATE_KEY: ${{ secrets.GOOGLE_SHEETS_PRIVATE_KEY }}
