@@ -9,22 +9,22 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "chrome-launcher": "^1.1.2",
-    "google-auth-library": "^9.15.1",
-    "google-spreadsheet": "^4.1.4",
-    "googleapis": "^144.0.0",
-    "lighthouse": "^12.3.0",
-    "next": "15.1.7",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "chrome-launcher": "^1.2.1",
+    "google-auth-library": "^10.5.0",
+    "google-spreadsheet": "^5.0.2",
+    "googleapis": "^168.0.0",
+    "lighthouse": "^13.0.1",
+    "next": "16.0.10",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
-    "@types/node": "^20.17.19",
+    "@types/node": "^25.0.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "15.1.7",
+    "eslint-config-next": "16.0.10",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
     "ts-node": "^10.9.2",
